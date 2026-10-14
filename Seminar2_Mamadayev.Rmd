@@ -1,0 +1,86 @@
+---
+title: "Самостоятельная работа"
+output: html_notebook
+---
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+## 1.1. Установка и загрузка дополнительных пакетов
+```{r}
+library(tidyverse)
+library(readxl)
+library(writexl)
+```
+
+## 1.2. Загрузка данных в формате Excel
+```{r}
+data <- read_excel(
+                  "Data_Water.xls",
+                  sheet = NULL, 
+                  skip = 10)
+```
+
+## 1.3. Обращение к столбцам
+```{r}
+data2025 <- data[ , c(1, 7)]
+colnames(data2025) <- c("Region", "y2025")
+data2025$y2025 <- as.numeric(data2025$y2025)
+```
+
+## 1.4. Преобразование данных
+```{r}
+data_piped <- data2025 %>% 
+  filter(!is.na(Region)) %>%
+  filter(Region != "РЕСПУБЛИКА КАЗАХСТАН") %>%
+  filter(Region != "х - конфиденциальные данные") %>%
+  filter(!is.na(y2025)) %>%
+  mutate(deviation = y2025 - mean(y2025))
+
+print(data_piped)
+```
+
+## 1.5. Сохранение данных в файл Excel
+```{r}
+write_xlsx(data_piped, "result_Mamadayev.xlsx")
+```
+
+
+## 2.1. Загрузка данных в формате Excel
+```{r}
+pop_data <- read_excel(
+                  "population.xls",
+                  sheet = NULL, 
+                  skip = 11)
+```
+
+
+## 2.2. Обращение к столбцам и Преобразование данных
+```{r}
+pop2025 <- pop_data[ , c(1, 2)]
+
+colnames(pop2025) <- c("Region", "Population")
+
+pop2025$Population <- gsub("[[:space:]]", "", pop2025$Population)
+pop2025$Population <- as.numeric(pop2025$Population)
+
+pop_clean <- pop2025 %>%
+  filter(!is.na(Region)) %>%
+  filter(Region != "РЕСПУБЛИКА КАЗАХСТАН") %>%
+  filter(!is.na(Population))
+```
+
+## 2.3. Объединение таблиц и расчет нового показателя
+```{r}
+final_table_2 <- inner_join(data_piped, pop_clean, by = "Region") %>%
+  mutate(Pop_per_Facility = Population / y2025) %>%
+  select(Region, y2025, Population, Pop_per_Facility)
+
+print(final_table_2)
+```
+
+## 2.4. Сохранение итогового файла
+```{r}
+write_xlsx(final_table_2, "result_Part2_Mamadayev.xlsx")
+```
